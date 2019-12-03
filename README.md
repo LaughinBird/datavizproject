@@ -1,7 +1,7 @@
 # datavizproject
 
-A link to our project website can be found here
-A link to our screencast videos can be found here 
+A link to our project website can be found here (https://laughinbird.github.io/datavizproject/) 
+A link to our screencast videos can be found here (https://drive.google.com/file/d/1wOCrn40aAQECayIF69u3_3B63_kXgs9Y/view?usp=sharing) 
 
 The code for our project consists of:
 One HTML file (index.html, the bulk of our code)
