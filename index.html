@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script type="text/javascript" src="Assets/main.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="Assets/fullpage.css" />
+    <!-- This following line is optional. Only necessary if you use the option css3:false and you want to use other easing effects rather than "easeInOutCubic". -->
+    <script src="Assets/easings.min.js"></script>
+    <!-- This following line is only necessary in the case of using the option `scrollOverflow:true` -->
+    <script type="text/javascript" src="Assets/scrolloverflow.min.js"></script>
+
+    <script type="text/javascript" src="Assets/fullpage.js"></script>
+  </head>
+
+  <body>
+    <div id="fullpage">
+      <div class="section fp-auto-height-responsive"> <h1>Visualizing Diseases <br>Around the World</h1><p id="titleAuthors" >Corey Emery, David Zhang, and Felix Liu</p>
+      </div>
+      <div class="section fp-auto-height-responsive">
+        <div><h2>Exploring Disease-Prone Regions Around the World</h2></div>
+        <div id="container" class="svg-container"></div>
+        <input id="pauseInput" type="checkbox"><p>Pause</p>
+        <input id="yearInput" type="range" min=1980 max=2018 value=1980>
+        <span id="yearText"></span>
+        <select class="selectpicker" id="diseaseInput">
+        </select>
+        <br/>
+        <span id="startScale">0</span>
+        <span id="scaleContainer"></span>
+        <span id="endScale"></span>
+        <span id="noDataContainer"></span>
+        <span>No data</span>
+      </div>
+      <div class="section fp-auto-height-responsive">
+        <p class="body-text">
+        In the world today, many diseases impact the health and wellness of communities. Many of the communicable diseases that afflict the developing world are actually preventable with the use of vaccines. However, for various reasons, the vaccination rates for each of these communicable diseases remains lower than the recommended rate of 95%.
+        <br><br>
+        Vaccines not only have a huge impact on the health and wellness of a community, but also save communities tremendous amounts of money that would be spent on healthcare and treatment.
+        </p>
+      </div>
+
+
+
+    <script type="text/javascript">
+      var worldmap = d3.json("CNTR_RG_10M_2016_4326.geojson");
+      var diseases = d3.csv("completeDiseases.csv");
+      var population = d3.csv("population.csv");
+
+      Promise.all([worldmap, diseases, population]).then(function([worldmap, diseases, population]) {
+
+        var w = window.innerWidth*1.5;
+        var h = window.innerHeight*1;
+
+        var svg = d3
+          .select("#container")
+          .append("svg")
+            .attr("preserveAspectRatio", "xMinYMin meet")
+            .attr("viewBox", "0 0 " + w + " " + h)
+            .style("background", "#0D1132")
+            .classed("svg-content", true);
+
+        var tooltip = d3
+          .select("body")
+          .append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        var yearSlider = document.getElementById("yearInput");
+        var pauseTime = document.getElementById("pauseInput");
+        var diseaseDropdown = document.getElementById("diseaseInput");
+        var endScale = document.getElementById("endScale");
+
+        var uniqueDiseases = diseases.map(d => d.Disease).filter((v,i,a) => a.indexOf(v) === i);
+        uniqueDiseases.forEach(disease => {
+          $("#diseaseInput").append('<option value="' + disease + '">' + disease + '</option>');
+        });
+
+        var projection = d3.geoMercator().translate([w/2, h/2]).scale(220).center([0,15]);
+        var path = d3.geoPath().projection(projection);
+
+        // Function to update map for different years
+        var updateMap = function() {
+          var year = yearSlider.value;
+          var disease = diseases.filter(d => d.Disease === diseaseDropdown.value);
+
+          document.getElementById("yearText").innerHTML = year;
+
+          var popObj = {};
+          population.map(d => {
+            var code = d["Country Code"];
+            popObj[code] = d;
+          });
+
+          var diseaseCases = {};
+          disease.map(d => {
+            var code = d.ISO_code;
+            diseaseCases[code] = ((d[year].length === 0 || !popObj[code] || !popObj[code][year])
+              ? NaN
+              : (100000 * +d[year] / +popObj[code][year]));
+          });
+
+          var validYears = Array.from([...Array(2018 - 1980 + 1).keys()], v => 1980 + v);
+          var diseaseMaxCases = Math.max(...validYears.map(y => Math.max(...disease.map(d => {
+            var code = d.ISO_code
+            return ((!popObj[code] || !popObj[code][y] ) ? 0 : (100000 * +d[y] / +popObj[code][y]));
+          }))));
+
+          endScale.innerHTML = diseaseMaxCases.toFixed(2).toLocaleString();
+
+          svg
+            .selectAll("path")
+            .data(worldmap.features)
+              .on("mouseover", function(d) {
+                tooltip
+                  .html(d.properties.NAME_ENGL + "<br/>"  +
+                    (diseaseCases[d.properties.ISO3_CODE] ||diseaseCases[d.properties.ISO3_CODE] === 0
+                    ? diseaseCases[d.properties.ISO3_CODE].toFixed(2)
+                    : "No Data"))
+                  .transition()
+                  .duration(200)
+                  .style("opacity", .9)
+                  .style("left", (d3.event.pageX) + "px")
+                  .style("top", (d3.event.pageY - 28) + "px");
+              })
+              .on("mouseout", function(d) {
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style("opacity", 0);
+              })
+              .transition()
+              .duration(150)
+              .style("fill", function(d) {
+                var cases = Math.cbrt(diseaseCases[d.properties.ISO3_CODE]);
+                var bg = Math.floor(255 * (1 - cases/Math.cbrt(diseaseMaxCases)));
+                return (Number.isNaN(cases)
+                    ? "url(#crossHatch)"
+                    : "rgb(255," + bg + "," + bg + ")");
+              });
+        };
+
+        var colorScale = d3
+          .select("#scaleContainer")
+          .append("svg")
+            .attr("width", "75%")
+            .attr("height", 20)
+          .append("g");
+        var linearGradient = colorScale
+          .append("defs")
+          .append("linearGradient")
+            .attr("id", "linear-gradient");
+        linearGradient
+          .append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "#FFFFFF");
+        linearGradient
+          .append("stop")
+            .attr("offset", Math.floor(100*(.25**3)) + "%")
+            .attr("stop-color", "#FFBFBF");
+        linearGradient
+          .append("stop")
+            .attr("offset", Math.floor(100*(.5**3)) + "%")
+            .attr("stop-color", "#FF7F7F");
+        linearGradient
+          .append("stop")
+            .attr("offset", Math.floor(100*(.75**3)) + "%")
+            .attr("stop-color", "#FF3F3F");
+        linearGradient
+          .append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "#FF0000");
+        colorScale
+          .append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .style("stroke", "black")
+            .style("stroke-width", 2)
+            .style("fill", "url(#linear-gradient)");
+
+        var noDataScale = d3
+          .select("#noDataContainer")
+          .append("svg")
+            .attr("width", 20)
+            .attr("height", 20)
+            .style("background", "#C9E8FD")
+          .append("g");
+        var hashMarks = noDataScale
+          .append("defs")
+          .append("pattern")
+            .attr("id", "crossHatch")
+            .attr("patternUnits", "userSpaceOnUse")
+            .attr("width", 4)
+            .attr("height", 4)
+          .append('path')
+            .attr("d", "M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2")
+            .attr("stroke", "#4E6372")
+            .attr("stroke-width", 0.5);
+        noDataScale
+          .append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .style("stroke", "black")
+            .style("stroke-width", 2)
+            .style("fill", "url(#crossHatch)");
+
+
+        svg
+          .append("defs")
+          .append("pattern")
+            .attr("id", "crossHatch")
+            .attr("patternUnits", "userSpaceOnUse")
+            .attr("width", 4)
+            .attr("height", 4)
+          .append('path')
+            .attr("d", "M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2")
+            .attr("stroke", "#4E6372")
+            .attr("stroke-width", 0.5);
+
+        svg
+          .selectAll("path")
+          .data(worldmap.features)
+          .enter()
+          .append("path")
+            .attr("class","continent")
+            .attr("d", path)
+            .style("fill", "url(#crossHatch)");
+        updateMap(yearSlider.value);
+
+        d3
+          .select("#yearInput")
+            .on("input", function() {
+              updateMap();
+            });
+
+        d3
+          .select("#diseaseInput")
+            .on("input", function(){
+              updateMap()
+            });
+
+        var runTime = function() {
+          if(!pauseTime.checked) {
+            var year = +(yearSlider.value)
+            var nextYear = (year === 2018 ? 1980 : year + 1);
+            yearSlider.value = nextYear;
+            updateMap();
+          }
+          setTimeout(runTime, 750);
+        };
+        runTime();
+      });
+    </script>
+
+    <div class="section fp-auto-height-responsive">
+      <div><h2>The Economic Impact of Vaccines</h2></div>
+      <button type="button" onclick="addCoins()">Add $1</button>
+      <div id="coinContainer"></div>
+      <div>
+        <p class="body-text">
+          In 2016, researchers conducted an analysis of the return on investment for vaccines in low and middle income countries between 2011-2020. They projected that immunizations will yield a net return of 16 times greater than costs over the decade. Using a full-income approach, which quantifies the value that people place on living longer and healthier lives, net returns amounted to 44 times the costs. Across all antigens, net returns were greater than costs.
+        </p>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      var w = window.innerWidth;
+      var h = window.innerHeight/2;
+
+      var svg = d3
+        .select("#coinContainer")
+        .append("svg")
+          .attr("preserveAspectRatio", "xMinYMin meet")
+          .attr("viewBox", "0 0 " + w + " " + h)
+          .attr("id", "coinSvg")
+          .classed("svg-content", true);
+
+      var numSpentNodes = 0;
+      var numSavedNodes = 0;
+      var numEconNodes = 0
+      var nodes = [];
+
+      var simulation = d3
+        .forceSimulation(nodes)
+        .force('charge', d3.forceManyBody().strength(5))
+        .force('center', d3.forceCenter(w / 2, h / 2))
+        .force('collision', d3.forceCollide().radius(function(d) {
+          return d.radius
+        }))
+        .on('tick', ticked);
+
+      function addCoins() {
+        numSpentNodes += 1;
+        numSavedNodes += 16;
+        numEconNodes += 33;
+
+        var spentNodes = d3
+          .range(numSpentNodes).map(function(d) {
+            return {group: -1, radius: 5}
+          });
+        var savedNodes = d3
+          .range(numSavedNodes).map(function(d) {
+            return {group: 0, radius: 5}
+          });
+        var econNodes = d3
+          .range(numEconNodes).map(function(d) {
+            return {group: 1, radius: 5}
+          });
+
+        nodes = spentNodes.concat(savedNodes, econNodes);
+        restart();
+      };
+
+      function restart() {
+        simulation.nodes(nodes);
+        simulation.alpha(0.5).restart();
+      };
+
+      function ticked() {
+        var coins = d3.select('#coinSvg')
+          .selectAll('circle')
+          .data(nodes);
+
+        coins.enter()
+          .append('circle')
+          .attr('r', function(d) {
+            return d.radius;
+          })
+          .merge(coins)
+          .attr('cx', function(d) {
+            return d.x + d.group * (w / 4);
+          })
+          .attr('cy', function(d) {
+            return d.y;
+          })
+          .style("fill", "#D4AF37");
+
+        coins.exit().remove();
+      };
+    </script>
+
+      <div class="section fp-auto-height-responsive">
+        <div><h2>Visualizing the Effect of Vaccines</h2></div>
+        <select class="selectpicker" id="vaccineInput">
+        </select>
+        <select class="selectpicker" id="diseaseInputCircles">
+        </select>
+        <div id="circles"></div>
+      <div>
+        <p class="body-text">
+          Vaccines are clearly effective in preventing disease. In this graphic, you can see that a majority of the countries that have high vaccination rates have lower incidence rates.
+        </p>
+      </div>
+      </div>
+
+        <script>
+            var margin = {top: 50, right: 50, bottom: 50, left: 50},
+            width = window.innerWidth*0.75 - margin.left - margin.right,
+            fillLowIncidence = "#932828",
+            fillHighIncidence = "#9F832A",
+            height = window.innerHeight*0.75 - margin.top - margin.bottom;
+
+            var year = 2018
+
+            var svg = d3.select("#circles")
+                .append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            // var immunizationCoverage = d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTSt767xRuUUJZ9i4WKq0d8Wnsmv_TPYvt_IOCpr3mmECbqGRv3swTieQD_qIiXhA/pubhtml?gid=1466150940&single=true");
+
+            // var incidenceRates = d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTw7X5OrRFClplDTO5Kpb47DhsbDJT97vca5Pnew3x_uC2PueRfGHuUC0VD3pJEl2SgIhtGLyv4lGkh/pubhtml?gid=2137623904&single=true");
+
+            var immunizationCoverages = d3.csv("completeVaccines.csv");
+
+            var diseaseRates = d3.csv("completeDiseases.csv");
+
+            //READ the Data
+            Promise.all([immunizationCoverages, diseaseRates]).then(function([immunizationCoverages, diseaseRates]) {
+
+                var vaccineDropdown = document.getElementById("vaccineInput");
+                var diseaseDropdown = document.getElementById("diseaseInputCircles");
+
+                var uniqueVaccines = immunizationCoverages.map(d => d.vaccine).filter((v,i,a) => a.indexOf(v) === i);
+                uniqueVaccines.forEach(vaccine => {
+                    $("#vaccineInput").append('<option value="' + vaccine + '">' + vaccine + '</option>');
+                });
+                var uniqueDiseases = diseaseRates.map(d => d.Disease).filter((v,i,a) => a.indexOf(v) === i);
+                uniqueDiseases.forEach(disease => {
+                    $("#diseaseInputCircles").append('<option value="' + disease + '">' + disease + '</option>');
+                });
+
+                //Add X axis
+                var x = d3
+                    .scaleLinear()
+                    .domain([0, 100]) //Max value is 100, min value is 0 (for coverage)
+                    .range([margin.left, width - margin.right - 20]);
+
+                var xAxisTranslate = height;
+
+                svg.append("g")
+                    .attr("transform", "translate(, " + xAxisTranslate  +")")
+                    .call(d3.axisBottom()
+                            .scale(x)
+                            .ticks(4));
+
+                //Add X axis label
+
+
+                var regions = immunizationCoverages.map(d => d.unicef_region).filter((v, i, a) => a.indexOf(v) === i);
+                var heights = (Array.from({length: regions.length}, (v,i) => margin.top + i * (height - margin.bottom - margin.top) / regions.length));
+
+                var y = d3
+                    .scaleOrdinal()
+                    .domain(regions)
+                    .range(heights);
+
+                svg.append("g")
+                    .attr("transform", "translate(100, 0)")
+                    .call(d3.axisLeft()
+                            .scale(y));
+
+
+                var tooltip = d3.select("body")
+                    .append("div")
+                      .style("opacity", 0)
+                      .attr("class", "tooltip")
+                      .style("position", "absolute")
+                      .style("background-color", "black")
+                      .style("border-radius", "5px")
+                      .style("padding", "10px")
+                      .style("color", "white")
+
+                  // -2- Create 3 functions to show / update (when mouse move but stay on same circle) / hide the tooltip
+                var showTooltip = function(d) {
+                    tooltip
+                      .transition()
+                      .duration(200)
+                    tooltip
+                      .style("opacity", 1)
+                      .html("Country: " + d.country + "<br>" + "Incidences: " + d.inRate + " cases" + "<br>" +
+                            "Immunization Coverage: " + d.imCoverage + "%")
+                      // .style("top", (d3.select(this).attr("cy") + "px"))
+                      // .style("left", (d3.select(this).attr("cx") + "px"))
+                      .style("top", (d3.event.pageY - 10) + "px")
+                      .style("left", (d3.event.pageX + 10) + "px")
+                }
+                var moveTooltip = function(d) {
+                    tooltip
+                      // .style("top", (d3.select(this).attr("cy") + "px"))
+                      // .style("left", (d3.select(this).attr("cx") + "px"))
+                      .style("top", (d3.event.pageY - 10) + "px")
+                      .style("left", (d3.event.pageX + 10) + "px")
+                }
+                var hideTooltip = function(d) {
+                    tooltip
+                      .transition()
+                      .duration(200)
+                      .style("opacity", 0)
+                }
+
+                var updateCircles = function() {
+                    var immunizationCoverage = immunizationCoverages.filter(d => d.vaccine === vaccineDropdown.value);
+                    var incidenceRates = diseaseRates.filter(d => d.Disease === diseaseDropdown.value);
+
+                    var diseaseObject = {};
+                    immunizationCoverage.map(d => {
+                        var code = d.iso3;
+                        diseaseObject[code] = {
+                            code,
+                            country: d.country,
+                            imCoverage: +d[year],
+                            region: d.unicef_region
+                        };
+                    });
+                    incidenceRates.map(d => {
+                        var code = d.ISO_code;
+                        if (diseaseObject[code]) {
+                            diseaseObject[code].inRate = +d[year];
+                        }
+                    });
+
+                    diseaseData = Object.values(diseaseObject);
+                    diseaseData.sort((a, b) => (a.inRate > b.inRate) ? -1 : 1);
+
+                    var imCoverage = immunizationCoverage.map(d => +d[year]);
+                    var inRates = incidenceRates.map(d => +d[year]);
+
+                    //Scale for bubble size
+                    var r = d3
+                        .scaleSqrt()
+                        .domain(d3.extent(inRates))
+                        .range([3, 30]);
+
+                    //Scale for bubble color
+                    var color = d3
+                        .scaleLinear()
+                        .domain([d3.min(inRates), d3.max(inRates)])
+                        .range([fillHighIncidence, fillLowIncidence]);
+
+                    //Add dots
+                    svg
+                        .selectAll("circle")
+                        .remove();
+
+                    svg
+                        .append('g')
+                        .selectAll('circle')
+                        .data(diseaseData)
+                        .enter()
+                        .append("circle")
+                        // Trigger hover functions
+                        .on("mouseover", showTooltip)
+                        .on("mousemove", moveTooltip)
+                        .on("mouseleave", hideTooltip)
+                            // .attr("class")
+                            .attr("cx", function (d) {return x(d.imCoverage)})
+                            .attr("cy", function (d) {return y(d.region)})
+                            .attr("r", function (d) {return r(d.inRate)})
+                            .style("fill", function (d) {return color(d.inRate)})
+                            .style("opacity", 0)
+                        .transition()
+                        .duration(500)
+                            .style("opacity", 1);
+
+                };
+                updateCircles();
+
+                d3
+                  .select("#vaccineInput")
+                    .on("input", function() {
+                      updateCircles()
+                    });
+                d3
+                  .select("#diseaseInputCircles")
+                    .on("input", function() {
+                      updateCircles()
+                    });
+            })
+
+
+
+        </script>
+
+      <div class="section fp-auto-height-responsive">
+        <div><h2>Understanding Outbreaks in Developed Countries</h2></div>
+        <div class="slide"><svg id="map1" width="1200" height="600"></svg></div>
+        <div class="slide"><svg id="map2" width="1200" height="600"></svg></div>
+        <div class="slide"><svg id="map3" width="1200" height="600"></svg></div>
+        <div class="slide"><svg id="map4" width="1200" height="600"></svg></div>
+        <script src="bundle.js"></script>
+      </div>
+
+      <div class="section fp-auto-height-responsive">
+        <p class="body-text">
+          In our analysis of the data, we noticed a curious trend for developed countries that already have relatively high vaccination rates. In the United States, France, and Spain, small pockets of the community had outbreaks of Measles in the 2000s, despite their high vaccination rates. A popular theory about these outbreaks of Measles is that they are the result of the anti-vaxxer movement, but a look at more historic data indicates that vaccination rates in these countries have remained consistent over the past 10 years. So why do these outbreaks happen?
+          <br><br>
+           Our hypothesis, infected people with measles come into contact with unvaccinated communities, and then these outbreaks spread. This happens through travel. Measles is extremely contagious, so pockets of unvaccinated individuals remain vulnerable.
+          <br><br>
+           More work needs to be done in understanding the nature of these outbreaks in developed countries.
+
+
+        </p>
+      </div>
+
+    </div>
+
+  </body>
+</html>

@@ -1,0 +1,125 @@
+h1 {
+  font-family: 'Avenir', Helvetica, sans-serif;
+  font-size: 3em;
+  font-weight: medium;
+  color: white;
+  text-align:center;
+}
+
+h2 {
+  font-family: 'Avenir', Helvetica, sans-serif;
+  font-size: 2em;
+  font-weight: bold;
+  color: white;
+  text-align:center;
+  margin:1%;
+}
+
+.body-text {
+  font-family: 'Avenir', Helvetica, sans-serif;
+  font-size: 1em;
+  font-weight: lighter;
+  color: white;
+  text-align:center;
+  margin: 25%;
+}
+
+#titleAuthors {
+  font-family: 'Avenir', Helvetica, sans-serif;
+  font-size: 0.75em;
+  font-weight: medium;
+  color: white;
+  text-align:center;
+}
+
+.continent {
+    stroke: #4E6372;
+    stroke-width: 1;
+}
+
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 2px 6px;
+    font: 12px sans-serif;
+    background: lightgray;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+#yearInput {
+    width: 50%;
+}
+
+#yearText {
+    font: 14px sans-serif;
+}
+
+body {
+  margin: 0px;
+  /*overflow: hidden;*/
+  background-color: #0D1132;
+}
+
+circle {
+  fill: steelblue;
+}
+
+.line-path {
+  fill: none;
+  stroke: red;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.line-path-vaccine {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+text {
+  font-family: sans-serif;
+}
+
+.tick text {
+  font-size: 1.2em;
+  fill: #635F5D;
+}
+
+.tick line {
+  stroke: none;
+}
+
+.axis-label-disease {
+  stroke: red;
+  font-size: 2em;
+  fill: #8E8883;
+}
+
+.axis-label-vaccine {
+  stroke: blue;
+  font-size: 2em;
+  fill: #8E8883;
+}
+
+.axis-label {
+  font-size: 2em;
+  fill: #8E8883;
+}
+
+.title {
+  font-size: 1.5em;
+  fill: #635F5D;
+}
+
+.disease-axis text{
+  fill: red;
+}
+
+.vaccine-axis text{
+  fill: blue;
+}
