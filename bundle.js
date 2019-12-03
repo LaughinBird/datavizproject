@@ -1,7 +1,8 @@
 var plot_line_chart = function (d3, ISO_code, disease, vaccine, svg_id) {
   'use strict';
 
-  const svg = d3.select(svg_id);
+  const svg = d3.select(svg_id)
+                .attr("transform", "translate(170,0)");
 
   // const width = +svg.attr('width');
   // const height = +svg.attr('height');
@@ -271,7 +272,7 @@ var plot_line_chart = function (d3, ISO_code, disease, vaccine, svg_id) {
           d[i] = +d[i];
         }
       });
-      console.log("a");
+      //console.log("a");
       var filtered_vaccine = data.filter(d => d.vaccine === vaccine);
       var country_vaccine = filtered_vaccine.filter(d => d.iso3 === ISO_code);
       renderVaccine(country_vaccine);

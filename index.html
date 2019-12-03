@@ -24,13 +24,14 @@
       <div class="section fp-auto-height-responsive">
         <div><h2>Exploring Disease-Prone Regions Around the World</h2></div>
         <div id="container" class="svg-container"></div>
-        <input id="pauseInput" type="checkbox"><p>Pause</p>
+        <input id="pauseInput" type="checkbox"><span>Pause</span>
         <input id="yearInput" type="range" min=1980 max=2018 value=1980>
         <span id="yearText"></span>
+        <span class="diseaseText">Disease: </span>
         <select class="selectpicker" id="diseaseInput">
         </select>
         <br/>
-        <span id="startScale">0</span>
+        <span id="startScale">Cases per 100,000 People: 0</span>
         <span id="scaleContainer"></span>
         <span id="endScale"></span>
         <span id="noDataContainer"></span>
@@ -67,8 +68,13 @@
         var tooltip = d3
           .select("body")
           .append("div")
+            .style("opacity", 0)
             .attr("class", "tooltip")
-            .style("opacity", 0);
+            .style("position", "absolute")
+            .style("background-color", "black")
+            .style("border-radius", "5px")
+            .style("padding", "10px")
+            .style("color", "white");
 
         var yearSlider = document.getElementById("yearInput");
         var pauseTime = document.getElementById("pauseInput");
@@ -117,7 +123,7 @@
             .data(worldmap.features)
               .on("mouseover", function(d) {
                 tooltip
-                  .html(d.properties.NAME_ENGL + "<br/>"  +
+                  .html("Country: " + d.properties.NAME_ENGL + "<br/>" + "Cases per 100,000 People: " +
                     (diseaseCases[d.properties.ISO3_CODE] ||diseaseCases[d.properties.ISO3_CODE] === 0
                     ? diseaseCases[d.properties.ISO3_CODE].toFixed(2)
                     : "No Data"))
@@ -147,7 +153,7 @@
         var colorScale = d3
           .select("#scaleContainer")
           .append("svg")
-            .attr("width", "75%")
+            .attr("width", "30%")
             .attr("height", 20)
           .append("g");
         var linearGradient = colorScale
@@ -189,7 +195,7 @@
           .append("svg")
             .attr("width", 20)
             .attr("height", 20)
-            .style("background", "#C9E8FD")
+            .style("background", "#0D1132")
           .append("g");
         var hashMarks = noDataScale
           .append("defs")
@@ -233,7 +239,7 @@
             .attr("class","continent")
             .attr("d", path)
             .style("fill", "url(#crossHatch)");
-        updateMap(yearSlider.value);
+        updateMap();
 
         d3
           .select("#yearInput")
@@ -262,12 +268,21 @@
 
     <div class="section fp-auto-height-responsive">
       <div><h2>The Economic Impact of Vaccines</h2></div>
-      <button type="button" onclick="addCoins()">Add $1</button>
+      <div class="button-position"><button type="button" onclick="addCoins()">Add $1</button></div>
       <div id="coinContainer"></div>
       <div>
-        <p class="body-text">
+        <span class="dollarVac">Spend on Vaccines</span>
+        <span class="dollarRet">Returns over Decade</span>
+        <span class="dollarNet">Net Returns over Decade</span>
+      </div>
+      <br>
+      <div>
+        <h3 class="dollarVac">$1</h3>
+        <h3 class="dollarRet">$16</h3>
+        <h3 class="dollarNet">$44</h3>
+<!--         <p class="body-text">
           In 2016, researchers conducted an analysis of the return on investment for vaccines in low and middle income countries between 2011-2020. They projected that immunizations will yield a net return of 16 times greater than costs over the decade. Using a full-income approach, which quantifies the value that people place on living longer and healthier lives, net returns amounted to 44 times the costs. Across all antigens, net returns were greater than costs.
-        </p>
+        </p> -->
       </div>
     </div>
 
@@ -318,6 +333,7 @@
         nodes = spentNodes.concat(savedNodes, econNodes);
         restart();
       };
+      addCoins();
 
       function restart() {
         simulation.nodes(nodes);
@@ -349,33 +365,50 @@
 
       <div class="section fp-auto-height-responsive">
         <div><h2>Visualizing the Effect of Vaccines</h2></div>
-        <select class="selectpicker" id="vaccineInput">
-        </select>
-        <select class="selectpicker" id="diseaseInputCircles">
-        </select>
+        <div class="button-position">
+          <span>Vaccine: </span>
+          <select class="selectpicker" id="vaccineInput">
+          </select>
+          <span class="diseaseText">Disease: </span>
+          <select class="selectpicker" id="diseaseInputCircles">
+          </select>
+        </div>
         <div id="circles"></div>
-      <div>
-        <p class="body-text">
-          Vaccines are clearly effective in preventing disease. In this graphic, you can see that a majority of the countries that have high vaccination rates have lower incidence rates.
-        </p>
-      </div>
+        <div>
+          <p class="body-text">
+            Vaccines are clearly effective in preventing disease. In this graphic, you can see that a majority of the countries that have high vaccination rates have lower incidence rates.
+          </p>
+        </div>
       </div>
 
         <script>
-            var margin = {top: 50, right: 50, bottom: 50, left: 50},
-            width = window.innerWidth*0.75 - margin.left - margin.right,
-            fillLowIncidence = "#932828",
-            fillHighIncidence = "#9F832A",
-            height = window.innerHeight*0.75 - margin.top - margin.bottom;
+            var margin = {top: 75, right: 50, bottom: 50, left: 200},
+            // width = window.innerWidth*0.75 - margin.left - margin.right,
+            fillLowIncidence = "#CF3A3A",
+            fillHighIncidence = "#DFBA41";
+            // height = window.innerHeight*0.75 - margin.top - margin.bottom;
 
             var year = 2018
 
-            var svg = d3.select("#circles")
-                .append("svg")
-                    .attr("width", width)
-                    .attr("height", height)
-                .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            // var svg = d3.select("#circles")
+            //     .append("svg")
+            //         .attr("width", width)
+            //         .attr("height", height)
+            //     .append("g")
+                    // .style("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            var width = window.innerWidth*.85;
+            var height = window.innerHeight*.65;
+
+            var svg = d3
+              .select("#circles")
+              .append("svg")
+                // .attr("preserveAspectRatio", "xMinYMin meet")
+                // .attr("viewBox", "0 0 " + width + " " + height)
+                .attr("width", width)
+                .attr("height", height)
+                .attr("transform", "translate(" + (margin.left / 4) + " " + margin.top + ")")
+              .append("g");
 
             // var immunizationCoverage = d3.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTSt767xRuUUJZ9i4WKq0d8Wnsmv_TPYvt_IOCpr3mmECbqGRv3swTieQD_qIiXhA/pubhtml?gid=1466150940&single=true");
 
@@ -408,13 +441,23 @@
 
                 var xAxisTranslate = height;
 
+                var xAxisLabel = "Vaccination Coverage %";
+
                 svg.append("g")
-                    .attr("transform", "translate(, " + xAxisTranslate  +")")
+                    .attr("transform", "translate(0, " + 25  +")")
                     .call(d3.axisBottom()
                             .scale(x)
                             .ticks(4));
 
                 //Add X axis label
+                svg.append("text")
+                  .attr('class', 'axis-label-disease')
+                  .attr('y', 15)
+                  .attr('x', window.innerWidth/2)
+                  .attr('fill', 'black')
+                  .attr('text-anchor', 'middle')
+                  .style('font-size', "1em")
+                  .text(xAxisLabel);
 
 
                 var regions = immunizationCoverages.map(d => d.unicef_region).filter((v, i, a) => a.indexOf(v) === i);
@@ -426,7 +469,7 @@
                     .range(heights);
 
                 svg.append("g")
-                    .attr("transform", "translate(100, 0)")
+                    .attr("transform", "translate(200,0)")
                     .call(d3.axisLeft()
                             .scale(y));
 
@@ -511,6 +554,9 @@
                     //Add dots
                     svg
                         .selectAll("circle")
+                        .transition()
+                        .duration(500)
+                          .style("opacity", 0)
                         .remove();
 
                     svg
@@ -526,7 +572,7 @@
                             // .attr("class")
                             .attr("cx", function (d) {return x(d.imCoverage)})
                             .attr("cy", function (d) {return y(d.region)})
-                            .attr("r", function (d) {return r(d.inRate)})
+                            .attr("r", function (d) {return (d.imCoverage === 0.0 ? 0 : r(d.inRate))})
                             .style("fill", function (d) {return color(d.inRate)})
                             .style("opacity", 0)
                         .transition()

@@ -1,34 +1,61 @@
-h1 {
+body {
   font-family: 'Avenir', Helvetica, sans-serif;
-  font-size: 3em;
-  font-weight: medium;
   color: white;
+}
+
+h1 {
+  font-size: 4em;
+  font-weight: medium;
   text-align:center;
 }
 
 h2 {
-  font-family: 'Avenir', Helvetica, sans-serif;
   font-size: 2em;
   font-weight: bold;
-  color: white;
   text-align:center;
-  margin:1%;
+  margin: 1%;
 }
 
+input {
+  position:center;
+}
+
+.dollarVac {
+  position: absolute;
+  text-align: center;
+  margin-left: 25%;
+  transform: translateX(-50%);
+}
+
+.dollarRet {
+  position: absolute;
+  text-align: center;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.dollarNet {
+  position: absolute;
+  text-align: center;
+  margin-left: 75%;
+  transform: translateX(-50%);
+}
+
+.button-position {
+  padding-left:10%;
+/*  padding-top:em;
+*/}
+
 .body-text {
-  font-family: 'Avenir', Helvetica, sans-serif;
   font-size: 1em;
   font-weight: lighter;
-  color: white;
   text-align:center;
-  margin: 25%;
+  margin: 5% 25%;
 }
 
 #titleAuthors {
-  font-family: 'Avenir', Helvetica, sans-serif;
   font-size: 0.75em;
   font-weight: medium;
-  color: white;
   text-align:center;
 }
 
@@ -37,29 +64,24 @@ h2 {
     stroke-width: 1;
 }
 
-
-.tooltip {
-    position: absolute;
-    text-align: center;
-    padding: 2px 6px;
-    font: 12px sans-serif;
-    background: lightgray;
-    border: 0px;
-    border-radius: 8px;
-    pointer-events: none;
-}
-
 #yearInput {
-    width: 50%;
+    width: 30%;
 }
 
-#yearText {
-    font: 14px sans-serif;
+#pauseInput {
+    margin-left:28%;
+}
+
+.diseaseText {
+  margin-left: 2%;
+}
+
+#startScale {
+  padding-left: 25%;
 }
 
 body {
   margin: 0px;
-  /*overflow: hidden;*/
   background-color: #0D1132;
 }
 
@@ -69,25 +91,25 @@ circle {
 
 .line-path {
   fill: none;
-  stroke: red;
+  stroke: #D72F2F;
   stroke-width: 1;
   stroke-linejoin: round;
 }
 
 .line-path-vaccine {
   fill: none;
-  stroke: blue;
+  stroke: #DFBA41;
   stroke-width: 1;
   stroke-linejoin: round;
 }
 
-text {
-  font-family: sans-serif;
+.domain {
+  color: #7C86D8;
 }
 
 .tick text {
   font-size: 1.2em;
-  fill: #635F5D;
+  fill: #7C86D8;
 }
 
 .tick line {
@@ -95,31 +117,29 @@ text {
 }
 
 .axis-label-disease {
-  stroke: red;
   font-size: 2em;
-  fill: #8E8883;
+  fill: #7C86D8;
 }
 
 .axis-label-vaccine {
-  stroke: blue;
   font-size: 2em;
-  fill: #8E8883;
+  fill: #7C86D8;
 }
 
 .axis-label {
   font-size: 2em;
-  fill: #8E8883;
+  fill: #7C86D8;
 }
 
 .title {
   font-size: 1.5em;
-  fill: #635F5D;
+  fill: #7C86D8;
 }
 
 .disease-axis text{
-  fill: red;
+  fill: #D72F2F;
 }
 
 .vaccine-axis text{
-  fill: blue;
+  fill: #DFBA41;
 }
